@@ -1,0 +1,9 @@
+Direct Links
+
+    https://github.com/stacksimplify/helm-masterclass
+
+    https://github.com/stacksimplify/helm-masterclass/tree/main/course-presentation
+
+    https://github.com/stacksimplify/helm-charts
+
+    https://github.com/stacksimplify/helm-charts-repo
