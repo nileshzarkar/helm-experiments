@@ -13,30 +13,78 @@
 ```t
 # Install helm with --generate-name flag
 helm install <repo_name_in_your_local_desktop/chart_name> --generate-name
-helm install stacksimplify/mychart1 --generate-name
-
-The helm install --generate-name command installs a Helm chart with a system-generated, unique name instead of requiring you to specify a release name manually. This is helpful when you don’t need to control the release name and want Helm to automatically handle naming.
---generate-name Flag:
-    When --generate-name is used, Helm creates a unique name for the release, combining a prefix (usually based on the chart name) with a random suffix.
-    This is useful for testing or situations where you don’t need to manage release names explicitly.
-Output:
-    Helm will display the generated release name in the terminal output, which you can use to reference the release later.
-Use Cases
-    Automated Deployments: Useful in scripts or CI/CD pipelines where you may not need to assign specific release names.
-    Testing and Development: For quick, repeated deployments without manually providing a name each time.
+helm install helm-repo/htmlpage --generate-name
 
 # List Helm Releases
 helm list
 helm list --output=yaml
 Observation:
-We can see the name as "name: mychart1-1689683948" some auto-generated number
+PS D:\Experiments\helm-experiments> helm install helm-repo/htmlpage --generate-name
+NAME: htmlpage-1731334059
+LAST DEPLOYED: Mon Nov 11 19:37:41 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services htmlpage-1731334059)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+PS D:\Experiments\helm-experiments> helm list --output=yaml
+- app_version: 4.0.0
+  chart: htmlpage-4.0.0
+  name: htmlpage-1731334059
+  namespace: default
+  revision: "1"
+  status: deployed
+  updated: 2024-11-11 19:37:41.1415635 +0530 IST
+
 
 # Helm Status
-helm status mychart1-1689683948 
-helm status mychart1-1689683948 --show-resources
+helm status htmlpage-1731334059
+
+PS D:\Experiments\helm-experiments> helm status htmlpage-1731334059
+NAME: htmlpage-1731334059
+LAST DEPLOYED: Mon Nov 11 19:37:41 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services htmlpage-1731334059)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+helm status htmlpage-1731334059 --show-resources
+
+PS D:\Experiments\helm-experiments> helm status htmlpage-1731334059 --show-resources
+NAME: htmlpage-1731334059
+LAST DEPLOYED: Mon Nov 11 19:37:41 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+RESOURCES:
+==> v1/Service
+NAME                  TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)          AGE
+htmlpage-1731334059   NodePort   10.99.51.78   <none>        8080:30082/TCP   79s
+
+==> v1/Deployment
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+htmlpage-1731334059   1/1     1            1           79s
+
+==> v1/Pod(related)
+NAME                                   READY   STATUS    RESTARTS   AGE
+htmlpage-1731334059-7f99fbdc68-tt9sg   1/1     Running   0          79s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services htmlpage-1731334059)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
 
 # Access Application
-http://localhost:31231
+http://localhost:30082/page
 ```
 
 
@@ -45,6 +93,6 @@ http://localhost:31231
 ```t
 # Uninstall Helm Release
 helm uninstall <RELEASE-NAME>
-helm uninstall mychart1-1689683948
+helm uninstall htmlpage-1731334059
 ```
 
