@@ -2,6 +2,7 @@
 
 
 
+
 ## Step-01: Introduction
 - We will learn the following in this section
     - helm install --set 
@@ -20,74 +21,65 @@
 
 ## Step-02: Override default NodePort 31231 with --set
 
-
 ### Step-02-01: Review our mychart1 Helm Chart values.yaml
-- [mychart1 values.yaml](https://github.com/stacksimplify/helm-charts/blob/main/mychart1/values.yaml)
+- [htmlpagechart values.yaml](https://github.com/nileshzarkar/helm-charts/blob/main/charts/htmlpagechart/values.yaml)
 
 
 
 
 ### Step-02-02: Learn about --dry-run and --debug flags for helm install command
-- Install Helm Chart by overriding NodePort 31231 with 31240
+- Install Helm Chart by overriding NodePort 30082 to 30092
 ```t
 # Helm Install with --dry-run command
-helm install myapp901 stacksimplify/mychart1 --set service.nodePort=31240 --dry-run 
-
-The helm install --dry-run command simulates the installation of a Helm chart without actually deploying it to the Kubernetes cluster. It’s useful for checking what will happen during an installation, allowing you to preview the resources and configuration.
---dry-run Flag:
-    When --dry-run is used, Helm goes through the release installation process but doesn’t actually deploy anything.
-    Instead, it renders the Kubernetes manifests, processes any template functions, and displays the generated YAML files in the terminal.
-What Information --dry-run Provides:
-    Generated YAML: Shows the fully rendered Kubernetes resources (like Deployments, Services, ConfigMaps) as they would appear when actually deployed.
-    Error Checking: Identifies template syntax errors or misconfigurations in your Helm chart before deployment.
-    Variables & Overrides: Reflects any custom values you pass with --set or --values, allowing you to verify the exact configuration.
-Use Case
---dry-run is helpful when you want to:
-    Preview what resources will be created and their configurations.
-    Test changes to a Helm chart without affecting the cluster.
-    Validate the syntax and parameters of Helm charts before deployment.
+helm install htmlpage helm-repo/htmlpage --set service.nodePort=30092 --dry-run 
 
 # Helm Install with --dry-run and --debug command
-helm install myapp901 stacksimplify/mychart1 --set service.nodePort=31240 --dry-run --debug
+helm install htmlpage helm-repo/htmlpage --set service.nodePort=30092 --dry-run --debug
 
 ## THE BELOW IS THE SAMPLE OUTPUT WITH DEBUG ADDED
-NAME: myapp901
+NAME: htmlpage
+LAST DEPLOYED: Tue Nov 12 05:58:55 2024
 NAMESPACE: default
 STATUS: pending-install
 REVISION: 1
-	USER-SUPPLIED VALUES:
+USER-SUPPLIED VALUES:
 service:
-  nodePort: 31240
+  nodePort: 30092
+
 COMPUTED VALUES:
+affinity: {}
+autoscaling:
+  enabled: false
+  maxReplicas: 100
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+config:
+  pageColor: green
 fullnameOverride: ""
 image:
-  pullPolicy: IfNotPresent
-  repository: ghcr.io/stacksimplify/kubenginx
-  tag: ""
-nameOverride: ""
-podAnnotations: {}
-replicaCount: 1
-service:
-  nodePort: 31240
-  port: 80
-  type: NodePort
+  pullPolicy: Always
+  repository: nileshzarkar/htmlpage
+  tag: 4.0.0
+imagePullSecrets: []
 ```
+
 
 
 
 ### Step-02-03: helm install with --set and test
 ```t
 # Helm Install 
-helm install myapp901 stacksimplify/mychart1 --set service.nodePort=31240 
+helm install htmlpage helm-repo/htmlpage --set service.nodePort=30092 
 
 # helm status --show-resources
-helm status myapp901 --show-resources
+helm status htmlpage --show-resources
 Observation:
-We can see that our NodePort service is running on port 31240
+We can see that our NodePort service is running on port 30092
 
 # Access Application
-http://localhost:31240
+http://localhost:30092/page
 ```
+
 
 
 
@@ -98,16 +90,16 @@ http://localhost:31240
 replicaCount: 2
 # Change-2: Add tag as "2.0.0" which will override the default appversion "1.0.0" from our mychart1
 image:
-  repository: ghcr.io/stacksimplify/kubenginx
+  repository: nileshzarkar/htmlpage
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.0.0"
-# Change-3: Change nodePort from 31240 to 31250
+# Change-3: Change nodePort from 30092 to 30082
 service:
   type: NodePort
-  port: 80
-  nodePort: 31250
+  nodePort: 30092
 ```
+
 
 
 
@@ -119,22 +111,23 @@ cd 09-Helm-Override-Values
 cat myvalues.yaml
 
 # helm upgrade with --dry-run and --debug commands
-helm upgrade myapp901 stacksimplify/mychart1 -f myvalues.yaml --dry-run --debug
+helm upgrade htmlpage helm-repo/htmlpage -f myvalues.yaml --dry-run --debug
 
 # helm upgrade
-helm upgrade myapp901 stacksimplify/mychart1 -f myvalues.yaml
+helm upgrade htmlpage helm-repo/htmlpage -f myvalues.yaml
 
 # helm status
 helm status myapp901 --show-resources
 Observation: 
 1. Two pods will be running as we changed replicacount to 2
-2. Service Node Port will be 31250 
+2. Service Node Port will be 30092 
 
 # Access Application
-http://localhost:31250
+http://localhost:30092/page
 Observation: 
 1. We should see V2 application because we have used the "image tag as 2.0.0"
 ```
+
 
 
 
@@ -143,48 +136,54 @@ Observation:
 ```t
 # helm get values
 helm get values RELEASE_NAME
-helm get values myapp901
-
-The helm get values command retrieves the configuration values for a specific Helm release. This includes all of the values that were used during the installation or last upgrade of the release, helping you understand or debug its current configuration.
-Optional Flags:
-    --all: When this flag is included, it shows all values, including default values provided by the chart and any custom values passed by the user. Without --all, only user-supplied values (overrides) are shown.
-    -o <format>: Allows you to specify the output format, like json or yaml, making it easier to use the data in scripts or tools that require specific formats.
-What Information helm get values Provides:
-    User-Supplied Values: Shows only the values that were explicitly overridden or customized at the time of installation or last upgrade.
-    Chart Defaults (with --all): Shows all values, including those set by default in the Helm chart, providing a complete view of the configuration.
-    Current Configuration: Shows the effective configuration for the release, useful for troubleshooting or validating the deployed settings.
+helm get values htmlpage
 
 Observation:
-1. Provides the values from current/latest release version 2 from Release myapp901
+1. Provides the values from current/latest release version 2 from Release htmlpage
 
 ## Sample Output
 PS D:\Experiments\helm-experiments\helm-experiments\helm-masterclass\helm-masterclass\09-Helm-Override-Values> helm get values myapp901
 USER-SUPPLIED VALUES:
 image:
-  pullPolicy: IfNotPresent
-  repository: ghcr.io/stacksimplify/kubenginx
+  pullPolicy: Always
+  repository: nileshzarkar/htmlpage
   tag: 2.0.0
 replicaCount: 2
 service:
-  nodePort: 31250
-  port: 80
+  nodePort: 30092
   type: NodePort
 
 
 # helm history (History prints historical revisions for a given release.)
-helm history myapp901
+helm history htmlpage
 
+PS D:\Experiments\helm-experiments\helm-masterclass\helm-masterclass\09-Helm-Override-Values> helm history htmlpage
+REVISION        UPDATED                         STATUS          CHART           APP VERSION     DESCRIPTION
+1               Tue Nov 12 06:01:06 2024        superseded      htmlpage-4.0.0  4.0.0           Install complete
+2               Tue Nov 12 06:03:58 2024        deployed        htmlpage-4.0.0  4.0.0           Upgrade complete
 
 # helm get values with --revision
 helm get values RELEASE-NAME --revision int
-helm get values myapp901 --revision 1
+helm get values htmlpage --revision 1
 
 ## Sample Output
-PS D:\Experiments\helm-experiments\helm-experiments\helm-masterclass\helm-masterclass\09-Helm-Override-Values> helm get values myapp901 --revision 1
+PS D:\Experiments\helm-experiments\helm-experiments\helm-masterclass\helm-masterclass\09-Helm-Override-Values> helm get values htmlpage --revision 1
 USER-SUPPLIED VALUES:
 service:
-  nodePort: 31240
+  nodePort: 30092
+
+PS D:\Experiments\helm-experiments\helm-masterclass\helm-masterclass\09-Helm-Override-Values> helm get values htmlpage --revision 2
+USER-SUPPLIED VALUES:
+image:
+  pullPolicy: Always
+  repository: nileshzarkar/htmlpage
+  tag: 2.0.0
+replicaCount: 2
+service:
+  nodePort: 30092
+  type: NodePort  
 ```
+
 
 
 
@@ -193,21 +192,13 @@ service:
 ```t
 # helm get manifest
 helm get manifest RELEASE-NAME
-helm get manifest myapp901
-
-The helm get manifest command retrieves the full manifest (all rendered Kubernetes YAML resources) for a specified Helm release. This lets you view the exact configuration that Helm deployed to Kubernetes based on the chart templates and values used.
-Output:
-    This command outputs the complete set of Kubernetes resource definitions (e.g., Deployments, Services, ConfigMaps, Secrets) as YAML files.
-    It shows the rendered YAML after all values and templates are processed, exactly as they were applied to the cluster.
-What Information helm get manifest Provides:
-    Rendered Resources: The YAML configuration of each Kubernetes resource created by the release. This includes details like labels, annotations, and values used for various fields.
-    Template Processing: Shows the output after Helm processes chart templates and values, which is particularly useful for debugging template issues.
-    Effective State: Displays what is currently deployed, so you can cross-check it with your expectations or compare it against future upgrades
+helm get manifest htmlpage
 
 # helm get manifest --revision
 helm get manifest RELEASE-NAME --revision int
-helm get manifest myapp901 --revision 1
+helm get manifest htmlpage --revision 1
 ```
+
 
 
 
@@ -218,19 +209,23 @@ helm get manifest myapp901 --revision 1
 ```t
 # helm get all
 helm get all RELEASE-NAME
-helm get all myapp901
+helm get all htmlpage
 ```
+
 
 
 
 ## Step-08: Uninstall Helm Release
 ```t
+
+
 # Uninstall Helm Release
-helm uninstall myapp901
+helm uninstall htmlpage
 
 # List Helm Releases
 helm list
 ```
+
 
 
 
@@ -245,22 +240,20 @@ helm list
 ## Step-10: Deleting a default Key by passing null
 - If you need to delete a key from the default values, you may override the value of the key to be null, in which case Helm will remove the key from the overridden values merge.
 ```t
-# Release: myapp901
-helm install myapp901 stacksimplify/mychart1 --atomic
+# Release: htmlpage
+helm install htmlpage helm-repo/htmlpage --atomic
 helm list
-helm status myapp901 --show-resources
-http://localhost:31231
-
-# Release: myapp902
-helm install myapp902 stacksimplify/mychart1 --atomic
-helm list
+helm status htmlpage --show-resources
+http://localhost:30082/page
 
 # Option-1: Give desired port other than 31231
-helm install myapp902 stacksimplify/mychart1 --set service.nodePort=31232 
+helm install htmlpage2 helm-repo/htmlpage --set service.nodePort=31232 
 
 # Option-2: Pass null value to nodePort (service.nodePort=null)
-helm install myapp902 stacksimplify/mychart1 --set service.nodePort=null --dry-run --debug
-helm install myapp902 stacksimplify/mychart1 --set service.nodePort=null 
+helm install htmlpage3 helm-repo/htmlpage --set service.nodePort=null 
+Note: Now the nodeport will be dynamic
+
+http://localhost:32659/page
 
 # Additional Notes for understanding
 1. We will choose option-2 to demonstrate the concept "Deleting a default Key by passing null"
@@ -269,7 +262,8 @@ helm install myapp902 stacksimplify/mychart1 --set service.nodePort=null
 4. In short, if we dont want to pass the default values present in values.yaml as-is, we dont need to change the complete chart with a new version, we can just pass null.
 
 # Uninstall Releases
-helm uninstall myapp901
-helm uninstall myapp902
+helm uninstall htmlpage
+helm uninstall htmlpage2
+helm uninstall htmlpage3
 helm list
 ```

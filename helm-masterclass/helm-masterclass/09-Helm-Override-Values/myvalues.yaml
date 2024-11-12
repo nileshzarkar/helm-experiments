@@ -3,13 +3,12 @@ replicaCount: 2
 
 # Change-2: Add tag as "2.0.0" which will override the default appversion "1.0.0" from our mychart1
 image:
-  repository: ghcr.io/stacksimplify/kubenginx
-  pullPolicy: IfNotPresent
+  repository: nileshzarkar/htmlpage
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.0.0"
 
-# Change-3: Change nodePort from 31240 to 31250
+# Change-3: Change nodePort from 30082 to 30092
 service:
   type: NodePort
-  port: 80
-  nodePort: 31250
+  nodePort: 30092  
