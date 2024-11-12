@@ -2,46 +2,50 @@
 
 
 
+
 ## Step-01: Introduction
 - We will learn to use `--atomic` flag when installing the Helm Release and also understand the importance of using it in a practical way
+
 
 
 
 ## Step-02: Install Helm Chart - Release: dev101
 ```t
 # Install Helm Chart 
-helm install dev101 stacksimplify/mychart1
+helm install htmlpage helm-repo/htmlpage
 
 # List Helm Release
 helm list 
 
 # List Kubernetes Resources Deployed as part of this Helm Release
-helm status dev101 --show-resources
+helm status htmlpage --show-resources
 
 # Access Application
-http://localhost:31231
+http://localhost:30082/page
 ```
+
 
 
 
 ## Step-03: Install Helm Chart - Release: qa101
 ```t
 # Install Helm Chart 
-helm install qa101 stacksimplify/mychart1
+helm install myapp helm-repo/htmlpage
 
 # List Helm Release
 helm list 
-Observation: You should see qa101 release installed with FAILED status
+Observation: You should see myapp release installed with FAILED status
 
 Error: INSTALLATION FAILED: 1 error occurred:
-	* Service "qa101-mychart1" is invalid: spec.ports[0].nodePort: Invalid value: 31231: provided port is already allocated
+        * Service "myapp-htmlpage" is invalid: spec.ports[0].nodePort: Invalid value: 30082: provided port is already allocated
 
 # Uninstall qa101 release which is in failed state
-helm uninstall qa101
+helm uninstall myapp
 
 # List Helm Release
 helm list 
 ```
+
 
 
 
@@ -52,33 +56,12 @@ helm list
 - `--timeout`  time to wait for any individual Kubernetes operation (like Jobs for hooks) (default 5m0s)
 ```t
 # Install Helm Chart 
-helm install qa101 stacksimplify/mychart1 --atomic
-
-The helm install --atomic command is used to ensure a safe installation of a Helm release. It either completes the installation successfully or rolls back automatically if any error occurs, keeping the cluster state clean and free of incomplete or failed releases.
---atomic Flag:
-    When --atomic is used, Helm monitors the deployment process to ensure every resource (like pods, services, and deployments) is created successfully.
-    If any part of the installation fails (e.g., a pod fails to start), Helm automatically rolls back all resources, leaving no partial deployments in the cluster.
-    This prevents the cluster from having incomplete or broken resources if the release encounters issues.
-Automatic Rollback:
-    In case of failure, Helm will remove any resources created during the failed installation, and the release will not appear as deployed.
+helm install myapp helm-repo/htmlpage --atomic
 
 # List Helm Release
 helm list 
-Observation: We will not see qa101 FAILED release, --atomic flag deleted the release as soon as it is failed with error
+Observation: We will not see myapp FAILED release, --atomic flag deleted the release as soon as it is failed with error
 
-Error: INSTALLATION FAILED: 1 error occurred:
-	* Service "qa101-mychart1" is invalid: spec.ports[0].nodePort: Invalid value: 31231: provided port is already allocated
+Error: INSTALLATION FAILED: release myapp failed, and has been uninstalled due to atomic being set: 1 error occurred:
+        * Service "myapp-htmlpage" is invalid: spec.ports[0].nodePort: Invalid value: 30082: provided port is already allocated
 ```
-
-
-
-## Step-05: Uninstall dev101 Release
-```t
-# Uninstall dev101 release
-helm uninstall dev101
-
-# List Helm Releases
-helm list
-```
-
-
