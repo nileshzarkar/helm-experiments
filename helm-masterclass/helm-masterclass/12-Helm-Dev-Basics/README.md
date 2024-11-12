@@ -1,5 +1,8 @@
 # Helm Template Functions and Pipelines
 
+
+
+
 ## Step-01: Introduction
 1. Template Actions `{{ }}`
 2. Action Elements `{{ .Release.Name }}`
@@ -12,11 +15,17 @@
 8. nindent function
 9. toYaml
 
+
+
+
 ## Step-02: Template Action "{{ }}"
 - Anything in between Template Action `{{ .Chart.Name }}` is called Action Element
 - Anything in between Template Action `{{ .Chart.Name }}` will be rendered by helm template engine and replace necessary values
 - Anything outside of the template action will be printed as it is.
 - Action elements defined inside the `{{ }}` will help us to retrieve data from other sources (example: `.Chart.Name`).
+
+
+
 
 ### Step-02-01: Valid Action Element
 ```t
@@ -26,15 +35,20 @@ kind: Deployment
 metadata:
   # Template Action with Action Elements
   name: {{ .Release.Name }}-{{ .Chart.Name }}
+# Release.Name = folder name in whcih your helm source code (in our case the folder \12-Helm-Dev-Basics\htmlpage)
+# Chart.Name = The name inside Chart.yaml
 
 # Change to CHART Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template Command
-helm template myapp101 .
+helm template htmlpage .
 1. helm template command helps us to check the output of the chart in fully rendered Kubernetes resource templates. 
 2. This will be very helpful when we are developing a new chart, making changes to the chart templates, for debugging etc.
 ```
+
+
+
 ### Step-02-02: Invalid Action Element 
 ```t
 # deployment.yaml file
@@ -44,20 +58,22 @@ metadata:
   # Template Action with Action Elements
   name: {{ something }}-{{ .Chart.Name }}
 # Change to CHART Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template Command
-helm template myapp101 .  
+helm template htmlpage .  
 Observation:
 1. Should fail with error
 2. In short, inside Action Element we should have 
 
-Error: parse error at (helmbasics/templates/deployment.yaml:10): function "something" not defined
+Error: parse error at (htmlpage/templates/deployment.yaml:10): function "something" not defined
 ```
+
+
+
 
 ## Step-03: Template Function: quote
 ```t
-
 In Helm templates, quote functions are used to handle strings and variables to ensure they are correctly interpreted in Kubernetes manifests. Helm provides three main quote functions: quote, squote, and dqoute.
 The quote function adds double quotes (" ") around a value, treating it as a single string
 value: {{ .Values.myVar | quote }}
@@ -76,18 +92,21 @@ value: "hello world"
     app.kubernetes.io/managed-by: {{ quote .Release.Service }} 
 
 # Change to CHART Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template Command
-helm template myapp101 .
+helm template htmlpage .
 ```
+
+
+
 
 ## Step-04: Pipeline
 - Pipelines are an efficient way of getting several things done in sequence. 
 - Inverting the order is a common practice in templates (.val | quote ) 
 ```t
-In Helm, pipeline functions allow you to chain and transform data within templates, enabling you to modify or format values effectively. They’re a part of Helm’s templating system, which uses the Go template language. Pipelines let you pass the output of one function directly into another, allowing complex transformations in a readable, step-by-step manner.
-Here's how a pipeline might look in a Helm template:
+
+Here is how a pipeline might look in a Helm template:
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -104,18 +123,20 @@ In this example:
 
 # Add Quote Function with Pipeline
   annotations:    
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    # quote function
-    app.kubernetes.io/managed-by: {{ quote .Release.Service }} 
-    # quote function with pipeline (here in pipeline order is from LEFT --> RIGHT)
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}               
+    # Pipeline
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote | upper }}        
+    # Pipeline
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote | upper | lower }}  
 
 # Change to CHART Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template Command
-helm template myapp101 .
+helm template htmlpage .
 ```
+
+
+
 
 ## Step-05: Template Function: default and lower
 - [default function](https://helm.sh/docs/chart_template_guide/function_list/#default)
@@ -128,6 +149,7 @@ Syntax
 <value-to-check>: The value you want to check. If this value is missing, the function returns <default-value> instead.
 
 Providing a Default Value for a Missing Configuration
+=====================================================
 apiVersion: v1
 kind: Service
 metadata:
@@ -135,74 +157,143 @@ metadata:
 spec:
   type: {{ default "ClusterIP" .Values.service.type }}
   ports:
-    - port: 80
-      targetPort: 80
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      nodePort: {{ .Values.service.nodePort }}
+      protocol: TCP
+      name: http
 Here, if .Values.service.type is not specified in values.yaml, the service type will default to ClusterIP.
 
-Setting a Default Label
-metadata:
-  labels:
-    app: {{ default "my-app" .Values.appName }}
-If .Values.appName is not set, the label app will default to "my-app".
+Providing a Default Value for a Missing Configuration
+=====================================================
+          env:
+            - name: page.color
+              value: {{ default "orange" .Values.config.pageColor }}
+If config.pageColor is not set, the config.pageColor will default to "orange".
 
 Using Default with Optional Container Ports
-containers:
-  - name: my-container
-    image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-    ports:
-      - containerPort: {{ default 80 .Values.containerPort }}
+===========================================
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ default 80 .Values.service.port }}
+              protocol: TCP
+          env:
 This example will use port 80 if .Values.containerPort is not defined in the values.yaml file.
 
-# values.yaml
-releaseName: "newrelease101"
-replicaCount: 3
-
-# Template Function default
-  annotations:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    # Quote Function
-    app.kubernetes.io/managed-by: {{ quote .Release.Service }}        
-    # Pipeline
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote | upper | lower }}        
-    # default Function
-    app.kubernetes.io/name: {{ default "MYRELEASE101" .Values.releaseName | lower }}
-spec:
-  replicas: {{ default 1  .Values.replicaCount }}
-
-# Change to CHART Directory
-cd helmbasics
-
 # Helm Template Command
-helm template myapp101 .
+helm template htmlpage .
 ```
+
+
+
 
 ## Step-06: Controlling Whitespaces
 - **{{- .Chart.name }}:**  If a hyphen is added before the statement, `{{- .Chart.name }}` then the leading whitespace will be ignored during the rendering
 - **{{ .Chart.name -}}:** If a hyphen is added after the statement, `{{ .Chart.name -}}` then the trailing whitespace will be ignored during the rendering
 ```t
 In Helm, whitespaces are controlled mainly through YAML templating and Go template syntax to ensure clean, readable, and correct output files. Here’s how whitespace handling works in Helm templates
+
 Trimming Whitespaces with Go Template Syntax
+============================================
 Helm uses Go templating, where special syntax helps control whitespace. You can use - before or after {{ or }} to trim spaces:
 {{- ... -}}  # Trims both leading and trailing spaces
 {{- ... }}   # Trims leading spaces
 {{ ... -}}   # Trims trailing spaces
+deployment.yaml
+...
 spec:
-  containers:
-    - name: {{ .Chart.Name }}
-      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-      {{- if .Values.serviceAccount }}
-      serviceAccountName: {{ .Values.serviceAccount }}
-      {{- end }}
-Here, {{- if .Values.serviceAccount }} trims any extra whitespace before the serviceAccountName line if the condition is not met, resulting in a clean YAML file.
+  {{ if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{ end }}
+  selector:
+...
+
+values.yaml
+...
+autoscaling:
+  enabled: false
+  minReplicas: 1
+...
+
+Output:
+...
+spec:
+
+  replicas: 1
+
+  selector:
+    matchLabels:
+...
+
+deployment.yaml
+...
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+...  
+
+Output:
+...
+spec:
+  replicas: 1
+  selector:
+...
+
+Here, {{- if not .Values.autoscaling.enabled }} trims any extra whitespace before the replicas line if the condition is not met, resulting in a clean YAML file.
+
 Managing Blank Lines
+====================
 Helm automatically removes blank lines that result from unused or empty templates.
 However, if you want to control it manually, using {{- or -}} around conditional statements or loops helps avoid blank lines when there’s no output.
-{{- if .Values.resources }}
-resources:
-  {{- toYaml .Values.resources | nindent 2 }}
-{{- end }}
+
+deployment.yaml
+...
+          resources:
+            {{ toYaml .Values.resources }}
+...
+
+Output:
+...
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+  cpu: 100m
+  memory: 128Mi
+requests:
+  cpu: 100m
+  memory: 128Mi
+...
+
+deployment.yaml
+...
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+...
+
+Output:
+...
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+...              
+
 This code block will only add the resources section if .Values.resources has content, without leaving unnecessary blank lines if the condition is not met.
+
 Whitespace in YAML Syntax
+=========================
 YAML relies on consistent indentation, so Helm templates should be carefully structured. Avoid inconsistent indentations within templates to prevent YAML parsing errors.
 ```
 ```yaml
@@ -220,11 +311,13 @@ YAML relies on consistent indentation, so Helm templates should be carefully str
     leadtrail-whitespace: "   {{- .Chart.Name -}}    kalyan"    
 
 # Change to CHART Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template Command
-helm template myapp101 .    
+helm template htmlpage .    
 ```
+
+
 
 
 ## Step-07: indent and nindent functions
@@ -259,11 +352,13 @@ Here, nindent 6 indents the labels by 6 spaces and keeps proper alignment within
     nindenttest: "  {{- .Chart.Name | nindent 4 -}}  "  
 
 # Change to CHART Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template Command
-helm template myapp101 .    
+helm template htmlpage .    
 ```
+
+
 
 
 ## Step-08: Template Function: toYaml 
