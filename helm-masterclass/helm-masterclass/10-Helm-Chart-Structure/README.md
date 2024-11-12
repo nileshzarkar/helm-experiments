@@ -2,8 +2,10 @@
 
 
 
+
 ## Step-01: Introduction
 - Understand Helm Chart Folder Structure
+
 
 
 
@@ -11,41 +13,32 @@
 ```t
 # Helm Create Chart
 helm create <CHART-NAME>
-helm create basechart
+helm create htmlpage
 Observation: 
 1. It will create a Helm Chart template 
 2. We can call it like a helm chart created from a default starter chart
-
-The command helm create basechart is used to create a new Helm chart directory with the name basechart. Helm automatically generates a template for this chart, providing a starting structure for developing a new Helm chart.
-Command Breakdown
-    helm create: This command generates the scaffolding for a new Helm chart.
-    basechart: This is the name of the chart that Helm will create. You can replace basechart with any other name you want for your chart.
-What Happens When You Run This Command?
-When you execute helm create basechart, Helm will create a new directory called basechart with the following structure:
 ```
+
 
 
 
 ## Step-03: Helm Chart Structure
 ```
-└── basechart
+└── htmlpage
     ├── .helmignore
     ├── Chart.yaml
-    ├── LICENSE
-    ├── README.md
+    ├── values.yaml
     ├── charts
     ├── templates
-    │   ├── NOTES.txt
-    │   ├── _helpers.tpl
-    │   ├── deployment.yaml
-    │   ├── hpa.yaml
-    │   ├── ingress.yaml
-    │   ├── service.yaml
-    │   ├── serviceaccount.yaml
-    │   └── tests
-    │       └── test-connection.yaml
-    └── values.yaml
-
+        ├── NOTES.txt
+        ├── _helpers.tpl
+        ├── deployment.yaml
+        ├── hpa.yaml
+        ├── ingress.yaml
+        ├── service.yaml
+        ├── serviceaccount.yaml
+        └── tests
+            └── test-connection.yaml
 
 
 ```t
