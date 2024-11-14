@@ -1,5 +1,8 @@
 # Helm Development - Flow Control If-Else
 
+
+
+
 ## Step-01: Introduction
 -  We can use `if/else` for creating conditional blocks in Helm Templates
 - **eq:** For templates, the operators (eq, ne, lt, gt, and, or and so on) are all implemented as functions. 
@@ -16,12 +19,17 @@
 {{ end }}
 ```
 
+
+
+
 ## Step-02: Review values.yaml
 ```yaml
 # If, else if, else
 myapp:
   env: prod
 ```
+
+
 
 
 ## Step-03: Logic and Flow Control Function: and 
@@ -32,63 +40,96 @@ myapp:
 eq .Arg1 .Arg2
 ```
 
+
+
+
 ## Step-04: Implement if-else for replicas
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ .Release.Name }}-{{ .Chart.Name }}
-  labels:
-    app: nginx
+deployment.yaml
+...
 spec:
-{{- if eq .Values.myapp.env "prod" }}
-  replicas: 4 
-{{- else if eq .Values.myapp.env "qa" }}  
+  {{- if not .Values.autoscaling.enabled }}
+  {{- if eq .Values.config.env "prod" }}
+  replicas: 3
+  {{- else if eq .Values.config.env "qa" }}  
   replicas: 2
-{{- else }}  
-  replicas: 1
-{{- end }}  
+  {{- else }}  
+  replicas: {{ default 1 .Values.replicaCount }}
+  {{- end }}  
+  {{- end }}
   selector:
     matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: ghcr.io/stacksimplify/kubenginx:4.0.0
-        ports:
-        - containerPort: 80
+...
+
+valuers.yaml
+...
+replicaCount: 1
+...
+config:
+  pageColor: "black"
+  env: "dev"  # prod-> replicas 3  ,  qa -> replicas 2 , dev -> replicas 1 (default)
+...
 ```
+
+
+
 
 ## Step-05: Verify if-else
 ```t
 # Change to Chart Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template (when env: prod from values.yaml)
 ## TEST IF STATEMENT
-helm template myapp1 .
+helm template htmlpage .
 
 # Helm Template (when env: qa using --set)
 ## TEST ELSE IF STATEMENT
-helm template myapp1 . --set myapp.env=qa
- 
+helm template htmlpage . --set config.env=qa
+
+Output:
+...
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+...    
+
 # Helm Template (when env: dev or env: null using --set)
 ## TEST ELSE STATEMENT
-helm template myapp1 . --set myapp.env=dev
+helm template htmlpage . --set myapp.env=dev
+
+Output:
+...
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+... 
+
+NOTE: 
+Readiness probe failed: Get "http://10.1.3.33:8080/": dial tcp 10.1.3.33:8080: connect: connection refused
+
+Solution: 
+Update values.yaml
+livenessProbe:
+  ...
+  initialDelaySeconds: 5
+  periodSeconds: 5
+readinessProbe:
+  ...
+  initialDelaySeconds: 5
+  periodSeconds: 5
 
 # Helm Install Dry-run 
-helm install myapp1 . --dry-run
+helm install htmlpage . --dry-run
 
 # Helm Install
-helm install myapp1 . --atomic
+helm install htmlpage . --atomic
 
 # Verify Pods
-helm status myapp1 --show-resources
+helm status htmlpage --show-resources
 
 # Uninstall Release
-helm uninstall myapp1
+helm uninstall htmlpage
 ```
