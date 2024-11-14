@@ -1,5 +1,8 @@
 # Helm Development - Flow Control If-Else with Boolean Check and "AND Function"
 
+
+
+
 ## Step-01: Introduction
 -  We can use `if/else` for creating conditional blocks in Helm Templates
 - **eq:** For templates, the operators (eq, ne, lt, gt, and, or and so on) are all implemented as functions. 
@@ -16,6 +19,10 @@
 {{ end }}
 ```
 
+
+
+
+
 ## Step-02: Review values.yaml
 ```yaml
 # If, else if, else
@@ -25,6 +32,9 @@ myapp:
     enableFeature: true
 ```
 
+
+
+
 ## Step-03: Logic and Flow Control Function: and 
 - [Logic and Flow Control Functions](https://helm.sh/docs/chart_template_guide/function_list/#logic-and-flow-control-functions)
 - **and:**  Returns the boolean AND of two or more arguments (the first empty argument, or the last argument).
@@ -32,60 +42,97 @@ myapp:
 # and Syntax
 and .Arg1 .Arg2
 ```
+
+
+
 ## Step-04: Implement if-else for replicas with Boolean 
 
+Usecase : 1
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ .Release.Name }}-{{ .Chart.Name }}
-  labels:
-    app: nginx
+deployment.yaml
+...
 spec:
-{{- if and .Values.myapp.retail.enableFeature (eq .Values.myapp.env "prod") }}
-  replicas: 6
-{{- else if eq .Values.myapp.env "prod" }}
-  replicas: 4
-{{- else if eq .Values.myapp.env "qa" }}  
+  {{- if and (not .Values.autoscaling.enabled) (eq .Values.config.env "prod")  }}
+  replicas: 3
+  {{- else if eq .Values.config.env "qa" }}  
   replicas: 2
-{{- else }}  
-  replicas: 1  
-{{- end }}
+  {{- else }}  
+  replicas: {{ default 1 .Values.replicaCount }}
+  {{- end }}  
   selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: ghcr.io/stacksimplify/kubenginx:4.0.0
-        ports:
-        - containerPort: 80
+...
+
+values.yaml
+...
+config:
+  pageColor: "black"
+  env: "prod"  # prod-> replicas 3  ,  qa -> replicas 2 , dev -> replicas 1 (default)
+...
+autoscaling:
+  enabled: true
+...  
+
+Output:
+...
+spec:
+  replicas: 1
+...
 ```
+
+
+Usecase : 2
+```yaml
+deployment.yaml
+...
+spec:
+  {{- if and (not .Values.autoscaling.enabled) (eq .Values.config.env "prod")  }}
+  replicas: 3
+  {{- else if eq .Values.config.env "qa" }}  
+  replicas: 2
+  {{- else }}  
+  replicas: {{ default 1 .Values.replicaCount }}
+  {{- end }}  
+  selector:
+...
+
+values.yaml
+...
+config:
+  pageColor: "black"
+  env: "prod"  # prod-> replicas 3  ,  qa -> replicas 2 , dev -> replicas 1 (default)
+...
+autoscaling:
+  enabled: false
+...  
+
+Output:
+...
+spec:
+  replicas: 1
+...
+```
+
 
 ## Step-05: Verify if-else
 ```t
 # Change to Chart Directory
-cd helmbasics
+cd htmlpage
 
 # Helm Template 
-helm template myapp1 . --set myapp.retail.enableFeature=true
-helm template myapp1 . --set myapp.retail.enableFeature=false
-helm template myapp1 . --set myapp.env=qa
-helm template myapp1 . --set myapp.env=dev
+helm template htmlpage . --set autoscaling.enabled=true
+helm template htmlpage . --set autoscaling.enabled=false
+helm template htmlpage . --set config.env=qa
+helm template htmlpage . --set config.env=dev
 
 # Helm Install Dry-run 
-helm install myapp1 . --set myapp.retail.enableFeature=true --dry-run
+helm install htmlpage . --set autoscaling.enabled=true --dry-run
 
 # Helm Install
-helm install myapp1 . --set myapp.retail.enableFeature=true --atomic
+helm install htmlpage . --set autoscaling.enabled=true --atomic
 
 # Verify Pods
-helm status myapp1 --show-resources
+helm status htmlpage --show-resources
 
 # Uninstall Release
-helm uninstall myapp1
+helm uninstall htmlpage
 ```

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}
+  labels:
+    {{- include "htmlpage.labels" . | nindent 4 }}
+  annotations:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    # Quote Function
+    app.kubernetes.io/managed-by: {{ quote .Release.Service }}    
+    # Pipeline
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote | upper }}        
+    # Pipeline
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote | upper | lower }}         
+spec:
+  {{- if and (not .Values.autoscaling.enabled) (eq .Values.config.env "prod")  }}
+  replicas: 3
+  {{- else if eq .Values.config.env "qa" }}  
+  replicas: 2
+  {{- else }}  
+  replicas: {{ default 1 .Values.replicaCount }}
+  {{- end }}  
+  selector:
+    matchLabels:
+      {{- include "htmlpage.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "htmlpage.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "htmlpage.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ default 80 .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: page.color
+              value: {{ default "orange" .Values.config.pageColor }}                
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
